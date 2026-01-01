@@ -36,6 +36,9 @@ class PopupController {
     // Load and render history
     await this.renderHistory(settings.history || []);
 
+    // Set initial status dot
+    this.updateStatusDot(this.elements.enableToggle.checked);
+
     // Add event listeners
     this.setupEventListeners();
   }
@@ -65,6 +68,18 @@ class PopupController {
     const format = Array.from(this.elements.formatRadios).find(r => r.checked)?.value || 'tsx';
 
     await chrome.storage.local.set({ enabled, format });
+
+    // Update status dot on icon
+    this.updateStatusDot(enabled);
+  }
+
+  private async updateStatusDot(enabled: boolean) {
+    // Use a small dot as indicator
+    const badgeText = '•';
+    const badgeColor = enabled ? '#10b981' : '#ef4444'; // Green or Red
+
+    chrome.action.setBadgeText({ text: badgeText });
+    chrome.action.setBadgeBackgroundColor({ color: badgeColor });
   }
 
   private async renderHistory(history: HistoryItem[]) {

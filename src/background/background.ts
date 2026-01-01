@@ -6,8 +6,35 @@
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'UPDATE_BADGE') {
     updateBadge(sender.tab?.id, message.data.count);
+  } else if (message.type === 'ADD_HISTORY') {
+    addToHistory(message.data);
   }
 });
+
+/**
+ * Add item to clipboard history
+ */
+async function addToHistory(item: {
+  format: string;
+  code: string;
+  svgContent: string;
+  timestamp: number;
+}) {
+  const MAX_HISTORY_ITEMS = 30;
+
+  // Get current history
+  const result = await chrome.storage.local.get('history');
+  const history = result.history || [];
+
+  // Add new item at the end
+  history.push(item);
+
+  // Keep only last N items
+  const trimmedHistory = history.slice(-MAX_HISTORY_ITEMS);
+
+  // Save back
+  await chrome.storage.local.set({ history: trimmedHistory });
+}
 
 /**
  * Update extension badge with SVG count

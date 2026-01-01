@@ -1,40 +1,20 @@
-import { SVGInfo, ExtensionMessage } from '../types/messages';
-
 /**
  * Popup UI controller for the SVG to Component Converter extension
  */
 
-class PopupController {
-  private svgs: SVGInfo[] = [];
-  private isOverlayEnabled = false;
-  private selectedSVGIndex: number | null = null;
-  private currentCode: string = '';
-  private currentFormat: 'tsx' | 'jsx' = 'tsx';
+interface HistoryItem {
+  format: 'tsx' | 'jsx' | 'svg';
+  code: string;
+  svgContent: string;
+  timestamp: number;
+}
 
-  // DOM elements
+class PopupController {
   private elements = {
-    svgCount: document.getElementById('svgCount')!,
-    noSvgsMessage: document.getElementById('noSvgsMessage')!,
-    mainContent: document.getElementById('mainContent')!,
-    toggleOverlay: document.getElementById('toggleOverlay')!,
-    overlayText: document.getElementById('overlayText')!,
-    svgList: document.getElementById('svgList')!,
-    conversionPanel: document.getElementById('conversionPanel')!,
-    closePanel: document.getElementById('closePanel')!,
-    selectedIndex: document.getElementById('selectedIndex')!,
-    componentName: document.getElementById('componentName') as HTMLInputElement,
+    enableToggle: document.getElementById('enableToggle') as HTMLInputElement,
     formatRadios: document.querySelectorAll<HTMLInputElement>('input[name="format"]'),
-    optimizeSvg: document.getElementById('optimizeSvg') as HTMLInputElement,
-    propWidth: document.getElementById('propWidth') as HTMLInputElement,
-    propHeight: document.getElementById('propHeight') as HTMLInputElement,
-    propClassName: document.getElementById('propClassName') as HTMLInputElement,
-    propColor: document.getElementById('propColor') as HTMLInputElement,
-    convertBtn: document.getElementById('convertBtn')!,
-    resultSection: document.getElementById('resultSection')!,
-    codeOutput: document.getElementById('codeOutput')!,
-    copyBtn: document.getElementById('copyBtn')!,
-    downloadBtn: document.getElementById('downloadBtn')!,
-    copyNotification: document.getElementById('copyNotification')!
+    historyList: document.getElementById('historyList')!,
+    clearHistory: document.getElementById('clearHistory')!
   };
 
   constructor() {
@@ -42,316 +22,100 @@ class PopupController {
   }
 
   private async init() {
-    // Set up event listeners
-    this.setupEventListeners();
+    // Load saved settings
+    const settings = await chrome.storage.local.get(['enabled', 'format', 'history']);
 
-    // Get current tab
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    // Apply settings to UI
+    this.elements.enableToggle.checked = settings.enabled !== false; // Default true
 
-    if (!tab.id) {
-      this.showNoSVGs();
-      return;
-    }
-
-    // Request SVG information from content script
-    try {
-      const response = await this.sendMessageToTab(tab.id, { type: 'GET_SVGS' });
-
-      if (response && response.type === 'SVGS_FOUND') {
-        this.svgs = response.data.svgs;
-        this.updateUI();
-      } else {
-        this.showNoSVGs();
-      }
-    } catch (error) {
-      console.error('Error getting SVGs:', error);
-      this.showNoSVGs();
-    }
-
-    // Listen for messages from content script
-    chrome.runtime.onMessage.addListener((message: ExtensionMessage) => {
-      if (message.type === 'SVG_SELECTED') {
-        this.showConversionPanel(message.data.index);
-      }
+    const savedFormat = settings.format || 'tsx';
+    this.elements.formatRadios.forEach(radio => {
+      radio.checked = radio.value === savedFormat;
     });
+
+    // Load and render history
+    await this.renderHistory(settings.history || []);
+
+    // Add event listeners
+    this.setupEventListeners();
   }
 
   private setupEventListeners() {
-    // Toggle overlay button
-    this.elements.toggleOverlay.addEventListener('click', () => {
-      this.toggleOverlay();
+    // Enable/Disable toggle
+    this.elements.enableToggle.addEventListener('change', () => {
+      this.saveSettings();
     });
 
-    // Close panel button
-    this.elements.closePanel.addEventListener('click', () => {
-      this.hideConversionPanel();
-    });
-
-    // Convert button
-    this.elements.convertBtn.addEventListener('click', () => {
-      this.convertSVG();
-    });
-
-    // Copy button
-    this.elements.copyBtn.addEventListener('click', () => {
-      this.copyToClipboard();
-    });
-
-    // Download button
-    this.elements.downloadBtn.addEventListener('click', () => {
-      this.downloadFile();
-    });
-
-    // Format radio change
+    // Format selection
     this.elements.formatRadios.forEach(radio => {
-      radio.addEventListener('change', (e) => {
-        this.currentFormat = (e.target as HTMLInputElement).value as 'tsx' | 'jsx';
+      radio.addEventListener('change', () => {
+        this.saveSettings();
       });
+    });
+
+    // Clear history button
+    this.elements.clearHistory.addEventListener('click', async () => {
+      await chrome.storage.local.set({ history: [] });
+      this.renderHistory([]);
     });
   }
 
-  private async sendMessageToTab(tabId: number, message: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-      chrome.tabs.sendMessage(tabId, message, (response) => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve(response);
-        }
-      });
-    });
+  private async saveSettings() {
+    const enabled = this.elements.enableToggle.checked;
+    const format = Array.from(this.elements.formatRadios).find(r => r.checked)?.value || 'tsx';
+
+    await chrome.storage.local.set({ enabled, format });
   }
 
-  private async getCurrentTab(): Promise<chrome.tabs.Tab> {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    return tab;
-  }
+  private async renderHistory(history: HistoryItem[]) {
+    const container = this.elements.historyList;
 
-  private updateUI() {
-    const count = this.svgs.length;
-
-    // Update count badge
-    this.elements.svgCount.textContent = `${count} SVG${count !== 1 ? 's' : ''}`;
-
-    if (count === 0) {
-      this.showNoSVGs();
+    if (!history || history.length === 0) {
+      container.innerHTML = '<p class="empty-state">No SVGs copied yet</p>';
       return;
     }
 
-    // Show main content
-    this.elements.noSvgsMessage.classList.add('hidden');
-    this.elements.mainContent.classList.remove('hidden');
+    container.innerHTML = '';
 
-    // Render SVG list
-    this.renderSVGList();
-  }
+    // Show most recent first
+    const reversed = [...history].reverse();
 
-  private renderSVGList() {
-    this.elements.svgList.innerHTML = '';
+    reversed.forEach((item, index) => {
+      const historyItem = document.createElement('div');
+      historyItem.className = 'history-item';
+      historyItem.title = `Click to copy as ${item.format.toUpperCase()}`;
 
-    this.svgs.forEach((svg, index) => {
-      const item = document.createElement('div');
-      item.className = 'svg-item';
-
-      const header = document.createElement('div');
-      header.className = 'svg-item-header';
-
-      const title = document.createElement('div');
-      title.className = 'svg-item-title';
-      title.textContent = `SVG #${index + 1}`;
-
-      const badge = document.createElement('div');
-      badge.className = 'svg-item-badge';
-      badge.textContent = svg.isExternal ? 'External' : 'Inline';
-
-      header.appendChild(title);
-      header.appendChild(badge);
-
-      const details = document.createElement('div');
-      details.className = 'svg-item-details';
-
-      const detailParts: string[] = [];
-      if (svg.width && svg.height) {
-        detailParts.push(`${svg.width} × ${svg.height}`);
-      } else if (svg.viewBox) {
-        detailParts.push(`viewBox: ${svg.viewBox}`);
+      // Render SVG preview
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = item.svgContent;
+      const svg = wrapper.querySelector('svg');
+      if (svg) {
+        historyItem.appendChild(svg);
       }
 
-      if (svg.isExternal && svg.src) {
-        const filename = svg.src.split('/').pop() || 'unknown';
-        detailParts.push(filename);
-      }
+      // Add format badge
+      const badge = document.createElement('span');
+      badge.className = 'format-badge';
+      badge.textContent = item.format.toUpperCase();
+      historyItem.appendChild(badge);
 
-      details.textContent = detailParts.join(' • ') || 'No dimensions';
+      // Click handler to copy
+      historyItem.addEventListener('click', async () => {
+        await navigator.clipboard.writeText(item.code);
 
-      item.appendChild(header);
-      item.appendChild(details);
+        // Visual feedback
+        historyItem.classList.add('copied');
+        const originalBadgeText = badge.textContent;
+        badge.textContent = '✓';
 
-      // Click handler
-      item.addEventListener('click', () => {
-        this.showConversionPanel(index);
+        setTimeout(() => {
+          historyItem.classList.remove('copied');
+          badge.textContent = originalBadgeText;
+        }, 1000);
       });
 
-      this.elements.svgList.appendChild(item);
+      container.appendChild(historyItem);
     });
-  }
-
-  private showNoSVGs() {
-    this.elements.svgCount.textContent = '0 SVGs';
-    this.elements.noSvgsMessage.classList.remove('hidden');
-    this.elements.mainContent.classList.add('hidden');
-  }
-
-  private async toggleOverlay() {
-    this.isOverlayEnabled = !this.isOverlayEnabled;
-
-    const tab = await this.getCurrentTab();
-    if (!tab.id) return;
-
-    try {
-      await this.sendMessageToTab(tab.id, {
-        type: 'TOGGLE_OVERLAY',
-        data: { enabled: this.isOverlayEnabled }
-      });
-
-      this.elements.overlayText.textContent = this.isOverlayEnabled
-        ? 'Hide SVG Overlay'
-        : 'Show SVG Overlay';
-
-      this.elements.toggleOverlay.style.background = this.isOverlayEnabled
-        ? '#10b981'
-        : '#3b82f6';
-    } catch (error) {
-      console.error('Error toggling overlay:', error);
-    }
-  }
-
-  private showConversionPanel(index: number) {
-    this.selectedSVGIndex = index;
-    this.elements.selectedIndex.textContent = String(index + 1);
-
-    // Generate default component name
-    const defaultName = `SvgIcon${index + 1}`;
-    this.elements.componentName.value = defaultName;
-
-    // Reset result section
-    this.elements.resultSection.classList.add('hidden');
-    this.currentCode = '';
-
-    // Show panel
-    this.elements.conversionPanel.classList.remove('hidden');
-  }
-
-  private hideConversionPanel() {
-    this.elements.conversionPanel.classList.add('hidden');
-    this.selectedSVGIndex = null;
-  }
-
-  private async convertSVG() {
-    if (this.selectedSVGIndex === null) return;
-
-    const tab = await this.getCurrentTab();
-    if (!tab.id) return;
-
-    // Get form values
-    const componentName = this.elements.componentName.value.trim() || 'MyIcon';
-    const format = Array.from(this.elements.formatRadios).find(r => r.checked)?.value as 'tsx' | 'jsx' || 'tsx';
-    const optimize = this.elements.optimizeSvg.checked;
-
-    const addProps = {
-      width: this.elements.propWidth.checked,
-      height: this.elements.propHeight.checked,
-      className: this.elements.propClassName.checked,
-      color: this.elements.propColor.checked
-    };
-
-    // Disable convert button
-    this.elements.convertBtn.textContent = 'Converting...';
-    this.elements.convertBtn.setAttribute('disabled', 'true');
-
-    try {
-      const response = await this.sendMessageToTab(tab.id, {
-        type: 'CONVERT_SVG',
-        data: {
-          index: this.selectedSVGIndex,
-          format,
-          componentName,
-          optimize,
-          addProps
-        }
-      });
-
-      if (response && response.type === 'SVG_CONVERTED') {
-        this.currentCode = response.data.code;
-        this.currentFormat = format;
-        this.displayResult(response.data.code);
-      } else if (response && response.type === 'ERROR') {
-        alert('Error converting SVG: ' + response.data.message);
-      }
-    } catch (error) {
-      console.error('Error converting SVG:', error);
-      alert('Error converting SVG. Please try again.');
-    } finally {
-      this.elements.convertBtn.textContent = 'Convert';
-      this.elements.convertBtn.removeAttribute('disabled');
-    }
-  }
-
-  private displayResult(code: string) {
-    this.elements.codeOutput.textContent = code;
-    this.elements.resultSection.classList.remove('hidden');
-  }
-
-  private async copyToClipboard() {
-    if (!this.currentCode) return;
-
-    try {
-      await navigator.clipboard.writeText(this.currentCode);
-      this.showNotification('Copied to clipboard!');
-    } catch (error) {
-      console.error('Error copying to clipboard:', error);
-
-      // Fallback method
-      const textarea = document.createElement('textarea');
-      textarea.value = this.currentCode;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-
-      this.showNotification('Copied to clipboard!');
-    }
-  }
-
-  private downloadFile() {
-    if (!this.currentCode) return;
-
-    const componentName = this.elements.componentName.value.trim() || 'MyIcon';
-    const extension = this.currentFormat;
-    const filename = `${componentName}.${extension}`;
-
-    const blob = new Blob([this.currentCode], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-
-    URL.revokeObjectURL(url);
-
-    this.showNotification(`Downloaded ${filename}!`);
-  }
-
-  private showNotification(message: string) {
-    this.elements.copyNotification.textContent = message;
-    this.elements.copyNotification.classList.remove('hidden');
-
-    setTimeout(() => {
-      this.elements.copyNotification.classList.add('hidden');
-    }, 2000);
   }
 }
 

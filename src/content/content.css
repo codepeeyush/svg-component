@@ -1,24 +1,113 @@
-/* SVG Converter Overlay Styles */
-
-.svg-converter-overlay {
-  /* All styles are inline for better control, but we can add global styles here */
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+/* Popover Styles */
+.svg-popover {
+  position: fixed;
+  z-index: 2147483647;
+  top: -9999px;
+  left: -9999px;
+  background: white;
+  border: 1px solid rgba(0,0,0,0.08); /* More subtle border */
+  border-radius: 10px; /* Slightly softer */
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.05), 
+    0 10px 15px -3px rgba(0, 0, 0, 0.08); /* Softer shadow */
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  font-size: 13px;
+  pointer-events: auto;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px) scale(0.98); /* Less movement */
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
 }
 
-.svg-converter-overlay * {
-  box-sizing: border-box;
+.svg-popover.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
 }
 
-/* Animation for highlighting */
-@keyframes svg-converter-pulse {
-  0%, 100% {
-    opacity: 0.1;
-  }
-  50% {
-    opacity: 0.3;
-  }
+.svg-popover span {
+  font-weight: 500;
+  color: #4b5563;
+  font-size: 12px;
 }
 
-.svg-converter-overlay.pulse {
-  animation: svg-converter-pulse 1s ease-in-out;
+.svg-popover button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  line-height: 1.2;
+}
+
+.svg-popover button:hover {
+  background: #1d4ed8;
+  /* Removed translateY */
+}
+
+.svg-popover button.copied {
+  background: #10b981; /* Green for success */
+  pointer-events: none;
+}
+
+/* Highlight Box (Border Outline) */
+.svg-popover-highlight {
+  position: absolute;
+  pointer-events: none;
+  border: 2px solid #3b82f6; /* Clear primary color border */
+  background: rgba(59, 130, 246, 0.02); /* Almost clear fill */
+  z-index: 9999;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.4);
+  transition: opacity 0.2s ease; /* Only fade opacity */
+  opacity: 0;
+}
+
+.svg-popover-highlight.visible {
+  opacity: 1;
+}
+
+/* Toast Styles - kept for backup/additional feedback */
+.svg-toast {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  background: #1f2937;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-family: -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10001;
+  transform: translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.svg-toast.visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.particle-clone {
+  /* Core styles injected by JS */
+  filter: grayscale(1);
+  will-change: transform, opacity;
+}
+
+/* The original element fades out during the snap */
+.thanos-snap-target {
+  transition: opacity 0.2s ease-out !important;
+  opacity: 0 !important;
 }

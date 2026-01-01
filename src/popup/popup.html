@@ -1,105 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SVG to Component Converter</title>
+  <title>SVG to Component</title>
   <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
+
 <body>
   <div class="container">
     <header>
-      <h1>SVG to Component</h1>
-      <div id="svgCount" class="badge">0 SVGs</div>
+      <div class="logo">
+        <img src="icons/icon-192.png" alt="Logo" class="logo-icon" width="24" height="24">
+        <h1>SVG to Component</h1>
+      </div>
     </header>
 
-    <div id="noSvgsMessage" class="message hidden">
-      <p>No SVG elements found on this page.</p>
-      <small>Visit a page with SVG content to get started.</small>
-    </div>
-
-    <div id="mainContent" class="hidden">
-      <div class="controls">
-        <button id="toggleOverlay" class="btn btn-primary">
-          <span id="overlayText">Show SVG Overlay</span>
-        </button>
+    <main>
+      <div class="control-group">
+        <div class="label-row">
+          <label for="enableToggle" class="main-label">Enable Detection</label>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="enableToggle">
+          <span class="slider round"></span>
+        </label>
       </div>
 
-      <div id="svgList" class="svg-list"></div>
+      <div class="control-group">
+        <label class="main-label">Output Format</label>
+        <div class="segmented-control">
+          <input type="radio" name="format" value="tsx" id="format-tsx" checked>
+          <label for="format-tsx">TSX</label>
 
-      <div id="conversionPanel" class="panel hidden">
-        <div class="panel-header">
-          <h3>Convert SVG #<span id="selectedIndex">1</span></h3>
-          <button id="closePanel" class="btn-close">&times;</button>
-        </div>
+          <input type="radio" name="format" value="jsx" id="format-jsx">
+          <label for="format-jsx">JSX</label>
 
-        <div class="form-group">
-          <label for="componentName">Component Name:</label>
-          <input type="text" id="componentName" placeholder="MyIcon" value="MyIcon">
-        </div>
-
-        <div class="form-group">
-          <label>Output Format:</label>
-          <div class="radio-group">
-            <label class="radio-label">
-              <input type="radio" name="format" value="tsx" checked>
-              <span>TypeScript (.tsx)</span>
-            </label>
-            <label class="radio-label">
-              <input type="radio" name="format" value="jsx">
-              <span>JavaScript (.jsx)</span>
-            </label>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>
-            <input type="checkbox" id="optimizeSvg" checked>
-            Optimize SVG
-          </label>
-        </div>
-
-        <div class="form-group">
-          <label>Add Props:</label>
-          <div class="checkbox-group">
-            <label>
-              <input type="checkbox" id="propWidth" checked>
-              width
-            </label>
-            <label>
-              <input type="checkbox" id="propHeight" checked>
-              height
-            </label>
-            <label>
-              <input type="checkbox" id="propClassName" checked>
-              className
-            </label>
-            <label>
-              <input type="checkbox" id="propColor" checked>
-              color
-            </label>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button id="convertBtn" class="btn btn-primary">Convert</button>
-        </div>
-
-        <div id="resultSection" class="hidden">
-          <div class="result-header">
-            <h4>Generated Component:</h4>
-            <div class="result-actions">
-              <button id="copyBtn" class="btn btn-small">Copy</button>
-              <button id="downloadBtn" class="btn btn-small">Download</button>
-            </div>
-          </div>
-          <pre id="codeOutput" class="code-output"></pre>
-          <div id="copyNotification" class="notification hidden">Copied to clipboard!</div>
+          <input type="radio" name="format" value="svg" id="format-svg">
+          <label for="format-svg">SVG</label>
         </div>
       </div>
-    </div>
+
+      <div class="history-section">
+        <div class="history-header">
+          <label class="main-label">Capture History</label>
+          <button id="clearHistory" class="clear-btn">Clear</button>
+        </div>
+        <div id="historyList" class="history-list">
+          <p class="empty-state">No SVGs copied yet</p>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>Hover over any SVG on a page to copy it.</p>
+    </footer>
   </div>
 
   <script src="popup.js"></script>
 </body>
+
 </html>

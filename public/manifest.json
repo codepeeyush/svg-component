@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "SVG to Component Converter",
+  "version": "1.0.0",
+  "description": "Convert SVG elements on any webpage to TSX/JSX React components with customizable props",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

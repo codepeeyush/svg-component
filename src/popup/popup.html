@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVG to Component Converter</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>SVG to Component</h1>
+      <div id="svgCount" class="badge">0 SVGs</div>
+    </header>
+
+    <div id="noSvgsMessage" class="message hidden">
+      <p>No SVG elements found on this page.</p>
+      <small>Visit a page with SVG content to get started.</small>
+    </div>
+
+    <div id="mainContent" class="hidden">
+      <div class="controls">
+        <button id="toggleOverlay" class="btn btn-primary">
+          <span id="overlayText">Show SVG Overlay</span>
+        </button>
+      </div>
+
+      <div id="svgList" class="svg-list"></div>
+
+      <div id="conversionPanel" class="panel hidden">
+        <div class="panel-header">
+          <h3>Convert SVG #<span id="selectedIndex">1</span></h3>
+          <button id="closePanel" class="btn-close">&times;</button>
+        </div>
+
+        <div class="form-group">
+          <label for="componentName">Component Name:</label>
+          <input type="text" id="componentName" placeholder="MyIcon" value="MyIcon">
+        </div>
+
+        <div class="form-group">
+          <label>Output Format:</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="format" value="tsx" checked>
+              <span>TypeScript (.tsx)</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="format" value="jsx">
+              <span>JavaScript (.jsx)</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="optimizeSvg" checked>
+            Optimize SVG
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label>Add Props:</label>
+          <div class="checkbox-group">
+            <label>
+              <input type="checkbox" id="propWidth" checked>
+              width
+            </label>
+            <label>
+              <input type="checkbox" id="propHeight" checked>
+              height
+            </label>
+            <label>
+              <input type="checkbox" id="propClassName" checked>
+              className
+            </label>
+            <label>
+              <input type="checkbox" id="propColor" checked>
+              color
+            </label>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button id="convertBtn" class="btn btn-primary">Convert</button>
+        </div>
+
+        <div id="resultSection" class="hidden">
+          <div class="result-header">
+            <h4>Generated Component:</h4>
+            <div class="result-actions">
+              <button id="copyBtn" class="btn btn-small">Copy</button>
+              <button id="downloadBtn" class="btn btn-small">Download</button>
+            </div>
+          </div>
+          <pre id="codeOutput" class="code-output"></pre>
+          <div id="copyNotification" class="notification hidden">Copied to clipboard!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

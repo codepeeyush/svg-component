@@ -1,0 +1,24 @@
+/* SVG Converter Overlay Styles */
+
+.svg-converter-overlay {
+  /* All styles are inline for better control, but we can add global styles here */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.svg-converter-overlay * {
+  box-sizing: border-box;
+}
+
+/* Animation for highlighting */
+@keyframes svg-converter-pulse {
+  0%, 100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.svg-converter-overlay.pulse {
+  animation: svg-converter-pulse 1s ease-in-out;
+}

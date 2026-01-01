@@ -1,8 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "SVG to Component Converter",
+  "name": "SVG Snap",
+  "short_name": "SVG Snap",
   "version": "1.0.0",
-  "description": "Convert SVG elements on any webpage to TSX/JSX React components with customizable props",
+  "description": "Instantly capture and convert any SVG to React components (TSX/JSX) with a satisfying snap animation. Hover, click, copy!",
+  "homepage_url": "https://github.com/codepeeyush/svg-component",
   "permissions": [
     "activeTab",
     "scripting",
@@ -13,14 +15,17 @@
   ],
   "action": {
     "default_popup": "popup.html",
+    "default_title": "SVG Snap - Capture SVGs instantly",
     "default_icon": {
-      "192": "icons/icon-192.png",
-      "512": "icons/icon-512.png"
+      "16": "icons/icon-192.png",
+      "48": "icons/icon-192.png",
+      "128": "icons/icon-512.png"
     }
   },
   "icons": {
-    "192": "icons/icon-192.png",
-    "512": "icons/icon-512.png"
+    "16": "icons/icon-192.png",
+    "48": "icons/icon-192.png",
+    "128": "icons/icon-512.png"
   },
   "background": {
     "service_worker": "background.js"
@@ -38,5 +43,9 @@
       ],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "offline_enabled": true,
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
 }
